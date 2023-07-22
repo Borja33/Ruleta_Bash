@@ -185,12 +185,12 @@ function inverselabrouchere()
         elif [ $(($Nrand % 2)) -eq 1 ] || [ "$Nrand" -eq 0 ]
         then
 
-          if [ $(($Nrand % 2)) -eq 1 ]
-          then
-            #echo -e "IMPAR,¡PIERDES!"
-          else
-            #echo -e "CERO,¡PIERDES!"
-          fi
+          #if [ $(($Nrand % 2)) -eq 1 ]
+          #then
+          #echo -e "IMPAR,¡PIERDES!"
+          #else
+          #echo -e "CERO,¡PIERDES!"
+          #fi
 
           if [ $money -lt $(($bet_to_renew-100)) ]
           then
@@ -237,17 +237,18 @@ function inverselabrouchere()
               #echo -e "[+]Restablecemos la secuencia a [${my_sequence[@]}]"
             fi
           fi
-        fi
-      else
-        if [ $(($Nrand % 2)) -eq 1 ] || [ "$Nrand" -eq 0 ]
-        then
+      fi
+    else
+      if [ $(($Nrand % 2)) -eq 1 ] || [ "$Nrand" -eq 0 ]
+      then
 
-          if [ $(($Nrand % 2)) -eq 1 ]
-          then
-            #echo -e "\n IMPAR,¡GANAS!"
-          else
-            #echo -e "\n CERO,¡GANAS!"
-          fi    
+          #if [ $(($Nrand % 2)) -eq 1 ]
+          #then
+          #echo -e "\n IMPAR,¡GANAS!"
+          #else
+          #echo -e "\n CERO,¡GANAS!"
+          #fi
+
           reward=$(($bet*2))
           let money+=$reward
           #echo -e "Tienes $money€"
@@ -330,7 +331,7 @@ function inverselabrouchere()
               #echo -e "[+]Restablecemos la secuencia a [${my_sequence[@]}]"
             fi
           fi
-        fi
+    fi
       fi
     else
       echo -e "\n${redColour}[-]${endColour}${grayColour}No tienes dinero para seguir apostando${endColour}"
@@ -344,6 +345,98 @@ function inverselabrouchere()
 
 }
 
+
+function dalembert()
+{
+  echo -e "\n${yellowColour}[+]${endColour}${grayColour} Dinero actual:${endColour}${greenColour} $money€${endColour}"
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿Cuanto dinero quieres apostar? ->${endColour} " && read initial_bet
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿Cuanto dinero quieres incrementar? ->${endColour} " && read incremento
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿A que deseas apostar continuamente?${endColour}${purpleColour} (par/impar)${endColour}${grayColour} ->${endColour} " && read par_impar
+
+  acumulado=0
+  backup_initialbet=$initial_bet
+  play_counter=0
+  tput civis
+
+  while true
+  do
+    Nrand=$(($RANDOM%37))
+    echo -e  "Nrando es: $Nrand"
+    money=$(($money-$initial_bet))
+    #echo -e "\n${yellowColour}[+]${endColour}${grayColour}Acabas de apostar${endColour}${greenColour} $initial_bet€ ${endColour}${grayColour} a ${endColour}${greenColour}$par_impar ${endColour}${grayColour}y tu saldo es${endColour}${greenColour} $money€ ${endColour}"
+
+    if [ ! $money -lt 0 ]
+    then
+      if [ "${par_impar,,}" == "par" ]
+      then
+        if [ $(($Nrand%2)) -eq 0 ] && [ $Nrand -ne 0 ]
+        then
+          #echo -e "\nPAR,GANAS"
+
+          let acumulado+=$initial_bet
+          money=$(($money + $initial_bet*2))
+
+          if [ $(($initial_bet-$incremento)) -le 0 ]
+          then
+            initial_bet=$backup_initialbet
+          else
+            initial_bet=$(($initial_bet-$incremento))
+          fi
+
+          #echo -e "${yellowColour}[+]${endColour} Acumulador:${greenColour} $acumulado${endColour}"
+          #echo -e "${yellowColour}[+]${endColour} Dinero actual:${greenColour} $money€${endColour}"
+          #echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $initial_bet€${endColour}"
+        else
+          #echo -e "\nIMPAR,PIERDES"
+
+          let acumulado-=$initial_bet
+
+          initial_bet=$(($initial_bet+$incremento))  
+
+          #echo -e "${yellowColour}[+]${endColour} Acumulador:${greenColour} $acumulado${endColour}"
+          #echo -e "${yellowColour}[+]${endColour} Dinero actual:${greenColour} $money€${endColour}"
+          #echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $initial_bet€${endColour}"
+
+        fi
+      elif [ $(($Nrand%2)) -eq 1 ] || [ $Nrand -eq 0 ]
+      then
+        #echo "IMPAR,GANAS"
+
+        let acumulado+=$initial_bet
+        money=$(($money + $initial_bet*2))
+
+        if [ $(($initial_bet-$incremento)) -le 0 ]
+        then
+          initial_bet=$backup_initialbet
+        else
+          initial_bet=$(($initial_bet-$incremento))
+        fi
+
+        #echo -e "${yellowColour}[+]${endColour} Acumulador:${greenColour} $acumulado${endColour}"
+        #echo -e "${yellowColour}[+]${endColour} Dinero actual:${greenColour} $money€${endColour}"
+        #echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $initial_bet€${endColour}"
+      else
+        #echo "PAR,PIERDES"
+
+        let acumulado-=$initial_bet
+
+        initial_bet=$(($initial_bet+$incremento))  
+
+        #echo -e "${yellowColour}[+]${endColour} Acumulador:${greenColour} $acumulado${endColour}"
+        #echo -e "${yellowColour}[+]${endColour} Dinero actual:${greenColour} $money€${endColour}"
+        #echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $initial_bet€${endColour}"
+
+      fi
+    else
+      echo -e "\n${redColour}[-]${endColour}${grayColour}No tienes dinero para seguir apostando${endColour}"
+      echo -e "${yellowColour}[+]${endColour}${grayColour}Se han realizado un total de${endColour}${greenColour} $play_counter ${endColour}${grayColour}jugadas${endColour}"
+      tput cnorm
+      exit -1
+    fi
+    let play_counter+=1
+    tput cnorm
+  done
+}
 
 while getopts "m:t:h" arg
 do
@@ -363,6 +456,9 @@ then
   elif [ "${tecnica,,}" == "inverselabrouchere" ]
   then
     inverselabrouchere
+  elif [ "${tecnica,,}" == "dalembert" ]
+  then
+    dalembert
   else
     echo -e "\n${redColour}[!] ${endColour}${grayColour}La tecnica introducida ${redColour}$tecnica${endColour}${grayColour} no es valida${endColour}"
     helpPanel
