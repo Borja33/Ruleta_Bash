@@ -356,12 +356,13 @@ function dalembert()
   acumulado=0
   backup_initialbet=$initial_bet
   play_counter=0
+  fail_plays="[ "
   tput civis
 
   while true
   do
     Nrand=$(($RANDOM%37))
-    echo -e  "Nrando es: $Nrand"
+    #echo -e  "Nrando es: $Nrand"
     money=$(($money-$initial_bet))
     #echo -e "\n${yellowColour}[+]${endColour}${grayColour}Acabas de apostar${endColour}${greenColour} $initial_bet€ ${endColour}${grayColour} a ${endColour}${greenColour}$par_impar ${endColour}${grayColour}y tu saldo es${endColour}${greenColour} $money€ ${endColour}"
 
@@ -372,6 +373,8 @@ function dalembert()
         if [ $(($Nrand%2)) -eq 0 ] && [ $Nrand -ne 0 ]
         then
           #echo -e "\nPAR,GANAS"
+
+          fail_plays="[ "
 
           let acumulado+=$initial_bet
           money=$(($money + $initial_bet*2))
@@ -388,7 +391,7 @@ function dalembert()
           #echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $initial_bet€${endColour}"
         else
           #echo -e "\nIMPAR,PIERDES"
-
+		  fail_plays+="$Nrand " 
           let acumulado-=$initial_bet
 
           initial_bet=$(($initial_bet+$incremento))  
@@ -402,6 +405,8 @@ function dalembert()
       then
         #echo "IMPAR,GANAS"
 
+		fail_plays="[ "
+ 
         let acumulado+=$initial_bet
         money=$(($money + $initial_bet*2))
 
@@ -418,6 +423,8 @@ function dalembert()
       else
         #echo "PAR,PIERDES"
 
+		fail_plays+="$Nrand " 
+
         let acumulado-=$initial_bet
 
         initial_bet=$(($initial_bet+$incremento))  
@@ -430,12 +437,136 @@ function dalembert()
     else
       echo -e "\n${redColour}[-]${endColour}${grayColour}No tienes dinero para seguir apostando${endColour}"
       echo -e "${yellowColour}[+]${endColour}${grayColour}Se han realizado un total de${endColour}${greenColour} $play_counter ${endColour}${grayColour}jugadas${endColour}"
+	  echo -e "\t${redColour}-${endColour}${grayColour}Se han realizado las siguentes malas jugadas consecutivas${endColour}${redColour} $fail_plays${endColour}${grayColour}]${endColour}"
       tput cnorm
       exit -1
     fi
     let play_counter+=1
     tput cnorm
   done
+}
+
+function fibonacci(){
+	echo -e "\n${yellowColour}[+]${endColour}${grayColour} Dinero actual:${endColour}${greenColour} $money€${endColour}"
+	echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿A que deseas apostar continuamente?${endColour}${purpleColour} (par/impar)${endColour}${grayColour} ->${endColour} " && read par_impar
+
+	declare -a secuencia=(1 1)
+	pos=0
+	bet=1
+	 play_counter=0
+  fail_plays="[ "
+	tput civis
+	
+	while true
+	do
+		Nrand=$(($RANDOM%37))
+		money=$(($money-$bet))
+
+		echo -e "Dinero tras restar la apuesta $money"
+		
+		if [ ! $money -lt 0 ]
+		then
+			if [ "${par_impar,,}" == "par" ]
+			then
+				if [ $(($Nrand%2)) -eq 0 ] && [ $Nrand -ne 0 ]
+				then
+					echo -e "\nPAR,GANAS"
+
+					elementos=${#secuencia[@]}
+					money=$(($money + $bet*2))
+					fail_plays="[ "
+					
+					echo -e "Numero de elementos de la secuencia: $elementos"
+					echo -e "Secuencia: ${secuencia[@]}"
+
+          			if [ $(($pos-2)) -le 0 ] 
+					then
+						let pos=1
+						bet=${secuencia[$pos]}
+					else
+						pos=$(($pos-2))
+						bet=${secuencia[$pos]}
+					fi
+
+					echo -e "\n${yellowColour}[+]${endColour} Dinero con las ganancias:${greenColour} $money€${endColour}"
+ 		            echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $bet€${endColour}"
+
+				else
+					echo -e "\nIMPAR,PIERDES"
+
+					elementos=${#secuencia[@]}
+					 fail_plays+="$Nrand "
+					 
+                    echo -e "Numero de elementos de la secuencia: $elementos"
+                    echo -e "Secuencia: ${secuencia[@]}"
+					
+                    bet=$((${secuencia[$(($pos-1))]}+${secuencia[pos]}))
+
+                    if [ $bet -eq ${secuencia[$(($pos+1))]} 2>/dev/null ]
+                    then
+                    	let pos+=1
+                   	else
+						let pos+=1
+						secuencia+=($bet)
+                   	fi
+
+                   	echo -e "\n${yellowColour}[+]${endColour} Dinero actual con las ganancias:${greenColour} $money€${endColour}"
+                    echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $bet€${endColour}"
+				fi
+			elif [ $(($Nrand%2)) -eq 1 ] || [ $Nrand -eq 0 ]
+			then
+					echo -e "\nIMPAR,GANAS"
+
+                    elementos=${#secuencia[@]}
+                    money=$(($money + $bet*2))
+					fail_plays="[ "
+					
+                    echo -e "Numero de elementos de la secuencia: $elementos"
+                    echo -e "Secuencia: ${secuencia[@]}"
+
+                    if [ $(($pos-2)) -le 0 ] 
+                    then
+                        let pos=1
+                        bet=${secuencia[$pos]}
+                    else
+                        pos=$(($pos-2))
+                        bet=${secuencia[$pos]}
+                    fi
+
+                    echo -e "\n${yellowColour}[+]${endColour} Dinero con las ganancias:${greenColour} $money€${endColour}"
+                    echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $bet€${endColour}"
+			else
+					echo -e "\nPAR,PIERDES"
+
+                    elementos=${#secuencia[@]}
+					 fail_plays+="$Nrand "
+					 
+                    echo -e "Numero de elementos de la secuencia: $elementos"
+                    echo -e "Secuencia: ${secuencia[@]}"
+                    
+                    bet=$((${secuencia[$(($pos-1))]}+${secuencia[pos]}))
+
+                    if [ $bet -eq ${secuencia[$(($pos+1))]} 2>/dev/null ]
+                    then
+                        let pos+=1
+                    else
+                        let pos+=1
+                        secuencia+=($bet)
+                    fi
+
+                    echo -e "\n${yellowColour}[+]${endColour} Dinero actual con las ganancias:${greenColour} $money€${endColour}"
+                    echo -e "${yellowColour}[+]${endColour} Dinero a apostar:${greenColour} $bet€${endColour}"
+			fi
+		else
+			echo -e "\n${redColour}[-]${endColour}${grayColour}No tienes dinero para seguir apostando${endColour}"
+      		echo -e "${yellowColour}[+]${endColour}${grayColour}Se han realizado un total de${endColour}${greenColour} $play_counter ${endColour}${grayColour}jugadas${endColour}"
+    		echo -e "\t${redColour}-${endColour}${grayColour}Se han realizado las siguentes malas jugadas consecutivas${endColour}${redColour} $fail_plays${endColour}${grayColour}]${endColour}"
+      		tput cnorm
+      		exit -1
+		fi
+		let play_counter+=1
+		tput cnorm
+	done
 }
 
 while getopts "m:t:h" arg
@@ -459,6 +590,9 @@ then
   elif [ "${tecnica,,}" == "dalembert" ]
   then
     dalembert
+  elif [ "${tecnica,,}" == "fibonacci" ]
+  then
+  	fibonacci
   else
     echo -e "\n${redColour}[!] ${endColour}${grayColour}La tecnica introducida ${redColour}$tecnica${endColour}${grayColour} no es valida${endColour}"
     helpPanel
