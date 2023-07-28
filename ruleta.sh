@@ -25,7 +25,7 @@ function helpPanel()
 {
   echo -e "\n${yellowColour}[+] ${endColour}${grayColour}Uso:${endColour}"
   echo -e "\t${yellowColour}[+] ${endColour}${grayColour}-m)Para definir la cantidad de dinero${endColour}"
-  echo -e "\t${yellowColour}[+] ${endColour}${grayColour}-t)Tecnica a emplear (${endColour}${purpleColour}martingala||inverselabrouchere${endColour}${grayColour})${endColour}"
+  echo -e "\t${yellowColour}[+] ${endColour}${grayColour}-t)Tecnica a emplear (${endColour}${purpleColour}martingala||inverselabrouchere||dalembert||fibonacci||paroli${endColour}${grayColour})${endColour}"
 }
 
 function martingala()
@@ -569,6 +569,110 @@ function fibonacci(){
 	done
 }
 
+function paroli()
+{
+  echo -e "\n${yellowColour}[+]${endColour}${grayColour} Dinero actual:${endColour}${greenColour} $money€ ${endColour} \n"
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿Cuanto dinero quieres apostar? ->${endColour} " && read initial_bet
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} ¿A que deseas apostar continuamente?${endColour}${purpleColour}(par/impar)${endColour}${grayColour} -> ${endColour} " && read par_impar
+  echo -ne "${yellowColour}[+]${endColour}${grayColour} Numero de apuestas objetivo ${endColour}" && read objetivo
+
+  tput civis
+  backup_bet=$initial_bet
+  contador=1
+  play_counter=0;
+  fail_plays="[ "
+
+  while true
+  do
+  	echo -e "Dinero antes de apostar: $money"
+    money=$(($money-$initial_bet)) 
+	echo -e "Dinero despues de quitar la apuesta: $money"
+    Nrand=$(($RANDOM % 37))
+	echo -e "El numero es: $Nrand"
+	
+    if [ ! "$money" -lt 0 ]
+    then    
+      if [ "$par_impar" == "par" ]
+      then
+		if [ $(($Nrand%2)) -eq 0 ] && [ $Nrand -ne 0 ]
+		then
+			#echo -e "\nPAR,GANAS"
+
+			let money+=$(($initial_bet*2))
+			
+			if [ $contador -eq $objetivo ] 
+			then
+				contador=1
+				initial_bet=$backup_bet
+				#echo -e "El contador es $contador y la apuesta es $initial_bet"
+			else
+				let contador+=1
+				initial_bet=$(($initial_bet*2))
+				#echo -e "El contador es $contador y la apuesta es $initial_bet"
+			fi
+
+			fail_plays="[ "
+		else
+			#echo -e "\nIMPAR,PIERDES"
+
+			if [ $contador -eq $objetivo ]
+            then
+                contador=1
+                initial_bet=$backup_bet
+                #echo -e "El contador es $contador y la apuesta es $initial_bet"
+            else
+                let contador+=1
+                initial_bet=$backup_bet
+                #echo -e "El contador es $contador y la apuesta es $initial_bet"
+            fi
+            
+            fail_plays+="$Nrand "
+		fi
+     elif [ $(($Nrand%2)) -eq 1 ] || [ $Nrand -eq 0 ]
+     then
+      	echo -e "\nIMPAR,GANA"
+
+      	let money+=$(($initial_bet*2))
+
+      	if [ $contador -eq $objetivo ]
+            then
+                contador=1
+                initial_bet=$backup_bet
+                echo -e "El contador es $contador y la apuesta es $initial_bet"
+            else
+                let contador+=1
+                initial_bet=$(($initial_bet*2))
+                echo -e "El contador es $contador y la apuesta es $initial_bet"
+            fi
+
+            fail_plays="[ "
+	else
+		echo -e "\nPAR,PIERDE"
+
+		if [ $contador -eq $objetivo ]
+            then
+                contador=1
+                initial_bet=$backup_bet
+                echo -e "El contador es $contador y la apuesta es $initial_bet"
+            else
+                let contador+=1
+                initial_bet=$backup_bet
+                echo -e "El contador es $contador y la apuesta es $initial_bet"
+            fi
+
+            fail_plays+="$Nrand "
+      fi
+    else
+		echo -e "\n${redColour}[-]${endColour}${grayColour}No tienes dinero para seguir apostando${endColour}"
+        echo -e "${yellowColour}[+]${endColour}${grayColour}Se han realizado un total de${endColour}${greenColour} $play_counter ${endColour}${grayColour}jugadas${endColour}"
+        echo -e "\t${redColour}-${endColour}${grayColour}Se han realizado las siguentes malas jugadas consecutivas${endColour}${redColour} $fail_plays]${endColour}"
+        tput cnorm
+        exit -1
+    fi
+    let play_counter+=1
+  done
+}
+
 while getopts "m:t:h" arg
 do
   case $arg in
@@ -593,6 +697,9 @@ then
   elif [ "${tecnica,,}" == "fibonacci" ]
   then
   	fibonacci
+  elif [ "${tecnica,,}" == "paroli" ]
+  then
+	paroli
   else
     echo -e "\n${redColour}[!] ${endColour}${grayColour}La tecnica introducida ${redColour}$tecnica${endColour}${grayColour} no es valida${endColour}"
     helpPanel
